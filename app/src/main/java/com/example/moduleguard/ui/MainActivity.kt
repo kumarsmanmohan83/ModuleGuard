@@ -1,4 +1,4 @@
-package com.example.moduleguard
+package com.example.moduleguard.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
