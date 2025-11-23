@@ -36,99 +36,46 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
+import com.example.moduleguard.ui.screen.ComposeUtils.AppHeader
+import com.example.moduleguard.ui.screen.ComposeUtils.CoolingBanner
+import com.example.moduleguard.ui.screen.ComposeUtils.ModulesList
+
 @Composable
 fun ModuleAccessScreen(vm: ModuleViewModel) {
     val state by vm.uiState.collectAsState()
+    val context = LocalContext.current
 
-    Scaffold { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // Title
-            Text("Demo: Module Access UI", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(16.dp))
+    Scaffold(
+        topBar = { AppHeader(title = "Module Access Dashboard") }
+    ) { padding ->
 
-            // Cooling banner (top)
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            // Cooling banner when active
             state.coolingMessage?.let { msg ->
                 CoolingBanner(message = msg)
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // Dynamic list of modules
-            val modules = state.response?.modules ?: emptyList()
-            LazyColumn(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                items(modules) { module ->
-                    ModuleCard(module = module, onClick = {
-                        val (allowed, reason) = vm.canOpenModule(module)
-                        if (allowed) {
-                            // show toast and navigate (navigation is not required — spec: show toast)
-                            //Toast.makeText(LocalContext.current, "Navigating to ${module.title}", Toast.LENGTH_SHORT).show()
-                        } else {
-                            //Toast.makeText(LocalContext.current, reason ?: "Access denied", Toast.LENGTH_SHORT).show()
-                        }
-                    }, isDisabled = !vm.canOpenModule(module).first)
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
-        }
-    }
-}
+            ModulesList(
+                modules = state.response?.modules ?: emptyList(),
+                onModuleClick = { module ->
+                    val (allowed, reason) = vm.canOpenModule(module)
 
-@Composable
-fun CoolingBanner(message: String) {
-    Card(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Warning, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(message, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-@Composable
-fun ModuleCard(
-    module: ModuleDto,
-    onClick:  () -> Unit,               // ✅ normal lambda, not @Composable
-    isDisabled: Boolean
-) {
-    val bgColor =
-        if (isDisabled)
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-        else
-            MaterialTheme.colorScheme.surface
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,              // ✅ Card has its own onClick in M3
-        enabled = !isDisabled,
-        colors = CardDefaults.cardColors(
-            containerColor = bgColor
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp     // ✅ CardElevation, not Dp directly
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = module.title,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
+                    Toast.makeText(
+                        context,
+                        if (allowed) "Navigating to ${module.title}" else reason ?: "Access denied",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+                isModuleDisabled = { module -> !vm.canOpenModule(module).first }
             )
-
-            if (isDisabled) {
-                Text(
-                    text = "Access Denied",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            } else {
-                Text(
-                    text = "Allowed",
-                    color = Color(0xFF2E7D32),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
         }
     }
 }
+
+
